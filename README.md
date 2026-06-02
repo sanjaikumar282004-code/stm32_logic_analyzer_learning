@@ -97,7 +97,7 @@ U
 Transmit:
 
 ```c
-printf("HELLO\r\n");
+printf("HELLO");
 ```
 
 Observed Output:
