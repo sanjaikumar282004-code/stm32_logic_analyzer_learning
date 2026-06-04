@@ -1,0 +1,120 @@
+#include "stm32f4xx.h"
+#include "stdint.h"
+
+void i2s_init(void)
+{
+	//enable clock for gpiob
+	RCC->AHB1ENR |= (1U<<1);
+
+	//SET PB12, PB13, PB15 TO AF MODE
+	GPIOB->MODER |= (1U<<25);
+	GPIOB->MODER &=~(1U<<24);
+
+	GPIOB->MODER |= (1U<<27);
+	GPIOB->MODER &=~(1U<<26);
+
+	GPIOB->MODER |= (1U<<31);
+	GPIOB->MODER &=~(1U<<30);
+
+	//SET AF05 FOR PB12,PB13 AND PB15
+	GPIOB->AFR[1] &= ~(1U<<19);
+	GPIOB->AFR[1] |= (1U<<18);
+	GPIOB->AFR[1] &= ~(1U<<17);
+	GPIOB->AFR[1] |= (1U<<16);
+
+	GPIOB->AFR[1] &= ~(1U<<23);
+	GPIOB->AFR[1] |= (1U<<22);
+	GPIOB->AFR[1] &= ~(1U<<21);
+	GPIOB->AFR[1] |= (1U<<20);
+
+	GPIOB->AFR[1] &= ~(1U<<31);
+	GPIOB->AFR[1] |= (1U<<30);
+	GPIOB->AFR[1] &= ~(1U<<29);
+	GPIOB->AFR[1] |= (1U<<28);
+
+	//DISABLE PLLI2S CLOCK
+	RCC->CR &= ~(1U<<26);
+
+	//WAIT FOR CLOCK TO UNLOCK
+	while(RCC->CR & (1U<<27));
+
+	//SET THE PLLI2S REGISTER
+
+	RCC->PLLI2SCFGR &= ~(1U<<30);
+	RCC->PLLI2SCFGR |= (1U<<29);
+	RCC->PLLI2SCFGR |= (1U<<28);
+
+	RCC->PLLI2SCFGR &= ~(1U<<14);
+	RCC->PLLI2SCFGR |= (1U<<13);
+	RCC->PLLI2SCFGR |= (1U<<12);
+	RCC->PLLI2SCFGR &= ~(1U<<11);
+	RCC->PLLI2SCFGR &= ~(1U<<10);
+	RCC->PLLI2SCFGR &= ~(1U<<9);
+	RCC->PLLI2SCFGR &= ~(1U<<8);
+	RCC->PLLI2SCFGR &= ~(1U<<7);
+	RCC->PLLI2SCFGR &= ~(1U<<6);
+
+	//ENABLE PLLI2S CLOCK
+	RCC->CR |= (1U << 26);
+
+	//WAIT FOR CLOCK ENABLE
+	while((RCC->CR & (1U<<27))==0);
+
+	//ENABLE CLOCK FOR SPI2/I2S2
+	RCC->APB1ENR |= (1U<<14);
+
+	//configure I2S prescalar register
+	//SETTING MASTER CLOCK DISABLED
+	SPI2->I2SPR &= ~(1U<<9);
+
+	//SETTING ODD
+	SPI2->I2SPR |= (1U<<8);
+
+	//SETTING I2SDIV
+	SPI2->I2SPR &= ~(1U<<7);
+	SPI2->I2SPR &= ~(1U<<6);
+	SPI2->I2SPR |= (1U<<5);
+	SPI2->I2SPR |= (1U<<4);
+	SPI2->I2SPR |= (1U<<3);
+	SPI2->I2SPR |= (1U<<2);
+	SPI2->I2SPR |= (1U<<1);
+	SPI2->I2SPR &= ~(1U<<0);
+
+	//CONFIGURE I2S CONFIG REGISTER
+	//SETTING MODE TO I2S
+	SPI2->I2SCFGR |= (1U<<11);
+
+	//SETTING MASTER TX
+	SPI2->I2SCFGR |= (1U<<9);
+	SPI2->I2SCFGR &= ~(1U<<8);
+
+	//I2S STANDARD SELECTION
+	SPI2->I2SCFGR &= ~(1U<<5);
+	SPI2->I2SCFGR &= ~(1U<<4);
+
+	//SETTING CKPOL
+	SPI2->I2SCFGR &= ~(1U<<3);
+
+	//SETTING DATA LENGTH TRANSFERED
+	SPI2->I2SCFGR &= ~(1U<<2);
+	SPI2->I2SCFGR &= ~(1U<<1);
+
+	//SETTING CHANNEL LENGTH
+	SPI2->I2SCFGR &= ~(1U<<0);
+
+	//ENABLE I2S
+	SPI2->I2SCFGR |= (1U<<10);
+
+
+}
+
+void i2s_transmit(uint16_t data)
+{
+
+	//WAIT FOR TX BUFFER EMPTY
+	while((SPI2->SR & (1U<<1))==0);
+
+	SPI2->DR = data;
+
+}
+
